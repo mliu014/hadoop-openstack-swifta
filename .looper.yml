@@ -1,0 +1,5 @@
+flows:
+  default:
+    - shell(name Init): echo "Building swifta hadoop driver for OpenStack Ceph"
+    - shell(name Build init): echo "Calling build script to build swifta jar"
+    - shell(name Build jar): mvn clean install -DskipTests
