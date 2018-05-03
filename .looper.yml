@@ -16,6 +16,9 @@ triggers:
   - manual:
       name: Deploy Snapshot
       call: deployAllSnapshots
+  - manual:
+      name: Deploy Release
+      call: deployAllReleases
 
 flows:
   default:
@@ -38,6 +41,7 @@ flows:
   buildComponent:
     - shell(name Component intro): echo "Building ${component}"
     - shell(name Component jar build): mvn clean package -DskipTests
+    - shell(name Component jar copy): cp target/${component}-${version}.${packaging} /tmp/${component}-${version}.${packaging}
 
   deployAllSnapshots:
     - call: versionsCheck
@@ -48,7 +52,24 @@ flows:
     - call: deploySnapshot
 
   deploySnapshot:
-    - var(jarPath = "target/${component}-${version}.${packaging}")
+    - var(jarPath = "/tmp/${component}-${version}.${packaging}")
     - shell (name Maven init): echo "Deploying ${component} snapshot to Proximity ${version}"
     - shell (name Maven deploy-file): mvn -B clean deploy:deploy-file -DartifactId="${component}" -DrepositoryId="${snapshotProximityRepoID}" -Durl="${snapshotProximityRepoURL}" -Dfile="${jarPath}" -Dpackaging="${packaging}" -DpomFile=pom.xml
 
+   deployAllReleases:
+    - call: versionsCheck
+    - exposeVars(maven)
+    - var(version = '%{MAVEN_VERSION.replace("-SNAPSHOT", "")}')
+    - call: buildAll
+    - call: generateRelease
+    - var(component = "hadoop-openstack")
+    - call: deployRelease
+
+  generateRelease:
+    - shell (name Maven release-title): echo "Preparing the release"
+    - (name Maven release): mvn -B clean release:prepare -DtagNameFormat='@{project.version}'
+
+  deployRelease:
+    - var(jarPath = "/tmp/${component}-${version}.${packaging}")
+    - shell (name Maven init): echo "Deploying ${component} releases to Proximity ${version}"
+    - shell (name Maven release-deploy): mvn -B clean deploy:deploy-file -DartifactId="${component}" -DrepositoryId="${releaseProximityRepoID}" -Durl="${releaseProximityRepoURL}" -Dfile="${jarPath}" -Dpackaging="${packaging}" -DupdateReleaseInfo=true -Dversion="${version}" -DpomFile=pom.xml
