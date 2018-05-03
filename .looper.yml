@@ -56,7 +56,7 @@ flows:
     - shell (name Maven init): echo "Deploying ${component} snapshot to Proximity ${version}"
     - shell (name Maven deploy-file): mvn -B clean deploy:deploy-file -DartifactId="${component}" -DrepositoryId="${snapshotProximityRepoID}" -Durl="${snapshotProximityRepoURL}" -Dfile="${jarPath}" -Dpackaging="${packaging}" -DpomFile=pom.xml
 
-   deployAllReleases:
+  deployAllReleases:
     - call: versionsCheck
     - exposeVars(maven)
     - var(version = '%{MAVEN_VERSION.replace("-SNAPSHOT", "")}')
